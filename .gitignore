@@ -102,3 +102,6 @@ ENV/
 
 # Jetbrains
 .idea
+
+# Local DB's
+databases/*
