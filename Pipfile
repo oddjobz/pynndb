@@ -14,6 +14,8 @@ ujson-delta = "*"
 pipenv = "*"
 coverage-badge = "*"
 coverage = "*"
+six = "*"
+posix-ipc = "*"
 
 
 [dev-packages]

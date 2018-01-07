@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 import unittest
-from pymamba import Database, Table, xIndexMissing, xWriteFail, xTableMissing, size_mb, size_gb
+from pynndb import Database, Table, xIndexMissing, xWriteFail, xTableMissing, size_mb, size_gb
 from subprocess import call
 from sys import maxsize, _getframe
 
