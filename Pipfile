@@ -12,6 +12,8 @@ ujson = "*"
 lmdb = "*"
 ujson-delta = "*"
 pipenv = "*"
+coverage-badge = "*"
+coverage = "*"
 
 
 [dev-packages]
