@@ -9,13 +9,15 @@ name = "pypi"
 
 bson = "*"
 ujson = "*"
-lmdb = "*"
 ujson-delta = "*"
 pipenv = "*"
 coverage-badge = "*"
 coverage = "*"
-six = "*"
+pytest = "*"
+"unittest2" = "*"
 posix-ipc = "*"
+tox = "*"
+lmdb = "*"
 
 
 [dev-packages]
