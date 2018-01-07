@@ -1,17 +1,17 @@
 PyMamba
 =======
 
-.. image:: https://travis-ci.org/oddjobz/pymamba.svg?branch=master
-    :target: https://travis-ci.org/oddjobz/pymamba
+.. image:: https://travis-ci.org/oddjobz/pynndb.svg?branch=master
+    :target: https://travis-ci.org/oddjobz/pynndb
 
-.. image:: https://codecov.io/gh/oddjobz/pymamba/branch/master/graph/badge.svg
+.. image:: coverage.svg
     :target: https://codecov.io/gh/oddjobz/pymamba
 
-PyMamba is a Python library designed to turn the LMDB storage engine into a relatively complete
-Database package for use in Python3 applications. In the spirit of the language title, this
-package is named after the fastest snake on the planet (Black Mamba) as a nod to the speed of
-the LMDB storage engine we’re leaning on.
+** UNDER CONSTRUCTION **
 
-See the API here: https://pymamba.linux.co.uk
+PyNNDB is the second iteration of PyMamba, the name change reflects a conflict with another project
+of the same name, and a degree of incompatibility between the API in the old and new versions. At
+this time the core components of the project should be considered relatively stable (beta) and are
+being used in production systems. The ORM module is experimental / alpha and has had very limited
+testing, while the replication module is incomplete / experimental and still needs work.
 
-Project page:     https://oddjobz.github.io/pymamba/
