@@ -12,6 +12,8 @@ pfile = Project(chdir=False).parsed_pipfile
 requirements = convert_deps_to_pip(pfile['packages'], r=False)
 test_requirements = convert_deps_to_pip(pfile['dev-packages'], r=False)
 
+requirements.append('Pipfile')
+
 setup(
     name='pynndb',
     version=__version__,
@@ -38,6 +40,7 @@ setup(
         'Programming Language :: Python :: 3.6',
     ],
     keywords=['pynndb', 'database', 'LMDB', 'python', 'ORM'],
-    install_required=requirements,
-    test_requires=test_requirements
+    install_requires=requirements,
+    test_requires=test_requirements,
+    data_files=[('', ['Pipfile'])]
 )
