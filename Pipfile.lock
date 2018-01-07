@@ -300,6 +300,7 @@
                 "sha256:39d88b533b422825d644087a21e78c45cf5af0ef7a99a1fc9fbb7b481e5c85b0",
                 "sha256:02f8102c2436bb03b3ee6dede1919d1dac8a427541652e5ec95171ec8adbc93a"
             ],
+            "markers": "python_version != '3.2'",
             "version": "==15.1.0"
         },
         "virtualenv-clone": {

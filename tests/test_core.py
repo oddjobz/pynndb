@@ -124,13 +124,13 @@ class UnitTests(unittest.TestCase):
         db = Database(self._db_name)
         db.set_binlog(True)
         self.generate_data(db, self._tb_name)
-        self.assertEqual(db.tables_all, ['__binlog__', '__metadata__', 'demo1'])
+        self.assertEqual(db.tables_all, ['__binidx__', '__binlog__', '__metadata__', 'demo1'])
         db.close()
 
         db = Database(self._db_name)
         db.drop(self._tb_name)
         db.drop('__binlog__')
-        self.assertEqual(db.tables_all, ['__metadata__'])
+        self.assertEqual(db.tables_all, ['__binidx__', '__metadata__'])
         with self.assertRaises(xTableMissing):
             db.drop('fred')
 
