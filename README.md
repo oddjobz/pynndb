@@ -5,6 +5,8 @@
 [![PyPI version](https://badge.fury.io/py/pymamba.svg)](https://badge.fury.io/py/pymamba)
 [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=Y8KQE7TRJV6ZA)
 
+** UNDER CONSTRUCTION **
+
 PyNNDB is the second iteration of PyMamba, the name change reflects a conflict with another project
 of the same name, and a degree of incompatibility between the API in the old and new versions. At
 this time the core components of the project should be considered relatively stable (beta) and are
