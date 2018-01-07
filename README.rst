@@ -1,5 +1,5 @@
-PyMamba
-=======
+PyNNDB - Python Native NoSQL Database
+=====================================
 
 .. image:: https://travis-ci.org/oddjobz/pynndb.svg?branch=master
     :target: https://travis-ci.org/oddjobz/pynndb
