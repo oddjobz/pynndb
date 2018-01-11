@@ -35,4 +35,4 @@ from .utils import *
 from .replication import *
 from .mp import *
 
-__version__ = '0.9.1'
+__version__ = '0.9.2'

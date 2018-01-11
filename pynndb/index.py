@@ -187,8 +187,9 @@ class Index(object):
         """
         old_key = self._func(old)
         new_key = self._func(rec)
-        if not txn.put(new_key, key, db=self._db):
-            raise xReindexNoKey2
-        if not txn.delete(old_key, key, db=self._db):
-            raise xReindexNoKey1
+        if old_key != new_key:
+            if not txn.put(new_key, key, db=self._db):
+                raise xReindexNoKey2
+            if not txn.delete(old_key, key, db=self._db):
+                raise xReindexNoKey1
 
