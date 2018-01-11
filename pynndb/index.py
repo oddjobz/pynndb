@@ -67,7 +67,10 @@ class Index(object):
         :return: True if equal
         :rtype: bool
         """
-        return value == self._func(record)
+        test = self._func(record)
+        if test == value:
+            return 0
+        return -1 if test > value else 1
 
     def set_key(self, cursor, record):
         """
@@ -89,7 +92,7 @@ class Index(object):
         :param record: A template record specifying the key to use
         :type record: dict
         """
-        cursor.set_range(self._func(record))
+        return cursor.set_range(self._func(record))
 
     def set_next(self, cursor, record):
         """
@@ -184,7 +187,8 @@ class Index(object):
         """
         old_key = self._func(old)
         new_key = self._func(rec)
-        if old_key != new_key:
-            if not txn.delete(old_key, key, db=self._db): raise xReindexNoKey1
-            if not txn.put(new_key, key, db=self._db): raise xReindexNoKey2
+        if not txn.put(new_key, key, db=self._db):
+            raise xReindexNoKey2
+        if not txn.delete(old_key, key, db=self._db):
+            raise xReindexNoKey1
 

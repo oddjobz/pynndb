@@ -356,7 +356,7 @@ So there are some interesting things going on here, we have created a new instan
 Again, virtual and calculated fields are only evaluated when reading through the users table, the cost of reading associated tables is only incurred if the linked attributes (addresses in this case) are accessed. Note that the addresses field is a list, but of type BaseModel, rather than of a raw dict.
 
 ----------------------
-Updating linkes tables
+Updating linked tables
 ----------------------
 
 In a similar fashion, we can do updates to the linked table;

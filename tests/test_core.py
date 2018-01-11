@@ -419,6 +419,7 @@ class UnitTests(unittest.TestCase):
         upper = {'cat': 'B', 'name': 'Gareth Bult1'}
         iter = table.range('by_compound', lower, upper)
         results = list(iter)
+        print(results)
 
         self.assertEqual(results[0]['name'], 'Squizzey')
         self.assertEqual(results[1]['name'], 'Gareth Bult1')
@@ -433,6 +434,48 @@ class UnitTests(unittest.TestCase):
 
         self.assertEqual(list(table.find('by_compound'))[0]['name'], '!Squizzey')
         self.assertEqual(list(table.find('by_age'))[0]['age'], 1)
+
+    def test_23_range_text(self):
+
+        db = Database(self._db_name)
+        table = db.table(self._tb_name)
+        self.generate_data(db, self._tb_name)
+        table.index('by_compound', '{cat}|{name}', duplicates=True)
+        table.index('by_age', '{age:03}', duplicates=True)
+
+        iter = list(table.range('by_compound'))
+        self.assertEqual(len(iter), 7)
+
+        lower = {'cat': ' ', 'name': ' '}
+        upper = {'cat': 'z', 'name': 'z'}
+        iter = list(table.range('by_compound', lower, upper))
+        self.assertEqual(len(iter), 7)
+
+        lower = {'cat': 'A', 'name': 'Fred Bloggs'}
+        upper = {'cat': 'z', 'name': 'z'}
+        iter = list(table.range('by_compound',  lower, upper))
+        self.assertEqual(len(iter), 7)
+
+        lower = {'cat': 'A', 'name': 'Sq'}
+        upper = {'cat': 'A', 'name': 'z'}
+        iter = list(table.range('by_compound', lower, upper))
+        self.assertEqual(len(iter), 1)
+
+        upper = {'cat': 'z', 'name': 'z'}
+        iter = list(table.range('by_compound', upper=upper))
+        self.assertEqual(len(iter), 7)
+
+        lower = {'cat': ' ', 'name': ' '}
+        iter = list(table.range('by_compound', lower=lower))
+        self.assertEqual(len(iter), 7)
+
+        lower = {'cat': 'B', 'name': ' '}
+        iter = list(table.range('by_compound', lower=lower))
+        self.assertEqual(len(iter), 4)
+
+        upper = {'cat': 'B', 'name': ''}
+        iter = list(table.range('by_compound', upper=upper))
+        self.assertEqual(len(iter), 3)
 
     def test_24_partial_index(self):
 
@@ -525,11 +568,10 @@ class UnitTests(unittest.TestCase):
         res = list(table.find())
         lower = res[0]['_id']
         upper = res[-1]['_id']
-        natural = list(table.range(None, {'_id': lower}, {'_id': upper}, inclusive=False))
+        natural = list(table.range(None, {'_id': lower}, {'_id': upper}))
 
-        self.assertEqual(natural[0]['code'], 'E')
-        self.assertEqual(natural[-1]['code'], 'B')
-
+        self.assertEqual(natural[0]['code'], 'F')
+        self.assertEqual(natural[-1]['code'], 'A')
 
         res = list(table.find())
         lower = None
@@ -565,23 +607,18 @@ class UnitTests(unittest.TestCase):
 
         lower = res[0]['_id']
         upper = res[0]['_id']
-        natural = list(table.range(None, {'_id': lower}, {'_id': upper}, inclusive=False))
-        self.assertEqual(natural, [])
-
-        lower = res[-1]['_id']
-        upper = res[-1]['_id']
-        natural = list(table.range(None, {'_id': lower}, {'_id': upper}, inclusive=False))
-        self.assertEqual(natural, [])
-
+        natural = list(table.range(None, {'_id': lower}, {'_id': upper}))
+        self.assertEqual(natural[0], res[0])
+        #
         lower = res[0]['_id']
         upper = res[1]['_id']
-        natural = list(table.range(None, {'_id': lower}, {'_id': upper}, inclusive=False))
-        self.assertEqual(natural, [])
-
+        natural = list(table.range(None, {'_id': lower}, {'_id': upper}))
+        self.assertEqual(natural, res[0:2])
+        #
         lower = res[0]['_id']
         upper = res[2]['_id']
-        natural = list(table.range(None, {'_id': lower}, {'_id': upper}, inclusive=False))
-        self.assertEqual(natural[0]['_id'], res[1]['_id'])
+        natural = list(table.range(None, {'_id': lower}, {'_id': upper}))
+        self.assertEqual(natural, res[0:3])
 
         table.index('by_code', '{code}')
         res = list(table.range('by_code', {'code': '0'}, {'code': 'Z'}))
@@ -592,13 +629,13 @@ class UnitTests(unittest.TestCase):
         self.assertEqual(res[0]['code'], 'B')
         self.assertEqual(res[-1]['code'], 'E')
 
-        res = list(table.range('by_code', {'code': 'B'}, {'code': 'E'}, inclusive=False))
-        self.assertEqual(res[0]['code'], 'C')
-        self.assertEqual(res[-1]['code'], 'D')
-
-        res = list(table.range('by_code', {'code': 'A'}, {'code': 'F'}, inclusive=False))
+        res = list(table.range('by_code', {'code': 'B'}, {'code': 'E'}))
         self.assertEqual(res[0]['code'], 'B')
         self.assertEqual(res[-1]['code'], 'E')
+        #
+        res = list(table.range('by_code', {'code': 'A'}, {'code': 'F'}))
+        self.assertEqual(res[0]['code'], 'A')
+        self.assertEqual(res[-1]['code'], 'F')
 
         res = list(table.range('by_code', None, None))
         self.assertEqual(res[0]['code'], 'A')

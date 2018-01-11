@@ -257,7 +257,7 @@ class Table(object):
                     yield record
                     count += 1
 
-    def range(self, index, lower=None, upper=None, inclusive=True, txn=None, keyonly=False):
+    def range(self, index, lower=None, upper=None, txn=None, keyonly=False):
         """
         Find all records with a key >= lower and <= upper. If you set inclusive to false the range
         becomes key > lower and key < upper. Upper and/or Lower can be set to None, if lower is none
@@ -270,8 +270,6 @@ class Table(object):
         :type lower: dict
         :param upper: A template record containing the upper end of the range
         :type upper: dict
-        :param inclusive: Whether to include items at each boundary
-        :type inclusive: bool
         :param txn: An optional transaction
         :type txn: Transaction
         :return: The records with keys within the specified range (generator)
@@ -288,6 +286,7 @@ class Table(object):
 
                     lower = lower['_id'] if lower else None
                     upper = upper['_id'] if upper else None
+                    inclusive = True
                     cursor.set_range(lower) if lower else cursor.first()
                     while not inclusive and cursor.key() == lower:
                         if not cursor.next() or cursor.key() == upper: return
@@ -303,38 +302,23 @@ class Table(object):
                             yield record
                             if not forward(): break
             else:
-                if index not in self._indexes: raise xIndexMissing
                 index = self._indexes[index]
                 with txn.cursor(index._db) as cursor:
-                    def forward():
-                        if upper:
-                            if index.match(key, upper) or not index.set_next(cursor, upper): return False
-                        else:
-                            if not cursor.next(): return False
-                        return True
-
                     if lower:
                         index.set_range(cursor, lower)
-                        while not inclusive and index.match(cursor.key(), lower):
-                            if not index.set_next(cursor, upper): break
+                        have_data = index.match(cursor.key(), lower) >= 0
                     else:
-                        if cursor.first() and not inclusive: cursor.next()
-                    while True:
-                        key = cursor.key()
-                        if not key: break
-                        if not keyonly:
+                        have_data = cursor.first()
+                    while have_data:
+                        if keyonly:
+                            yield cursor
+                        else:
                             record = txn.get(cursor.value(), db=self._db)
                             if not record: raise xNotFound(cursor.value())
                             record = loads(record.decode())
                             record['_id'] = cursor.value()
-                        else:
-                            record = cursor
-                        if not inclusive:
-                            if not forward(): break
                             yield record
-                        else:
-                            yield record
-                            if not forward(): break
+                        have_data = index.set_next(cursor, upper) if upper else cursor.next()
 
     def get(self, key, txn=None, abort=False):
         """
@@ -400,7 +384,7 @@ class Table(object):
             doc['_id'] = key
             return doc
 
-    def ensure(self, index, func, duplicates=False, force=True):
+    def ensure(self, index, func, duplicates=False, force=False):
         """
         Ensure than an index exists and create if it's missing
 
