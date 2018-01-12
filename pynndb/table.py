@@ -305,7 +305,7 @@ class Table(object):
                 with txn.cursor(index._db) as cursor:
                     if lower:
                         index.set_range(cursor, lower)
-                        have_data = index.match(cursor.key(), lower) >= 0
+                        have_data = index.match(cursor.key(), lower) >= 0 and index.match(cursor.key(), upper) <= 0
                     else:
                         have_data = cursor.first()
                     while have_data:
