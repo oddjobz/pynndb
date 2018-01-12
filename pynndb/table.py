@@ -104,7 +104,6 @@ class Table(object):
             doc = loads(txn.get(key, db=self._db).decode())
             if not txn.delete(key, db=self._db): raise xWriteFail
             for name in self._indexes:
-                print("DELTXN:", txn)
                 if not self._indexes[name].delete(txn, key, doc): raise xWriteFail
 
     @write_transaction
