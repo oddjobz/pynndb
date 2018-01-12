@@ -22,3 +22,8 @@ lmdb = "*"
 
 [dev-packages]
 
+pytest = "*"
+pytest-cov = "*"
+"unittest2" = "*"
+coverage = "*"
+coverage-badge = "*"
