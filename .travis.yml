@@ -2,8 +2,9 @@ language: python
 python:
 - '3.6'
 install:
-- pip install -r requirements.txt
-- pip install tox
+- pip install pipenv
+- pipenv install
+- pipenv install --dev
 script:
 - tox
 notifications:

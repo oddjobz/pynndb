@@ -18,6 +18,9 @@ pytest = "*"
 posix-ipc = "*"
 tox = "*"
 lmdb = "*"
+"cmd2" = {git = "https://github.com/python-cmd2/cmd2.git"}
+readline = "*"
+termcolor = "*"
 
 
 [dev-packages]
@@ -27,3 +30,4 @@ pytest-cov = "*"
 "unittest2" = "*"
 coverage = "*"
 coverage-badge = "*"
+tox = "*"
