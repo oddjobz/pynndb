@@ -9,16 +9,15 @@ name = "pypi"
 
 bson = "*"
 ujson = "*"
-ujson-delta = "*"
+ujson_delta = "*"
 pipenv = "*"
 coverage-badge = "*"
 coverage = "*"
 pytest = "*"
 "unittest2" = "*"
-posix-ipc = "*"
+posix_ipc = "*"
 tox = "*"
 lmdb = "*"
-"cmd2" = {git = "https://github.com/python-cmd2/cmd2.git"}
 readline = "*"
 termcolor = "*"
 

@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "7d9c8d4ed4fe6d09667976d2e951febc4ee3156dfd01075831ad0634aa32731e"
+            "sha256": "3efdea3637c4dc1cd5f70b7c6f6e17dcd15699fafe51ddea14b3c53d06105ba0"
         },
         "host-environment-markers": {
             "implementation_name": "cpython",
@@ -60,9 +60,6 @@
                 "sha256:84ab92ed1c4d4f16916e05906b6b75a6c0fb5db821cc65e70cbd64a3e2a5eaae"
             ],
             "version": "==3.0.4"
-        },
-        "cmd2": {
-            "git": "https://github.com/python-cmd2/cmd2.git"
         },
         "coverage": {
             "hashes": [
@@ -318,6 +315,7 @@
                 "sha256:39d88b533b422825d644087a21e78c45cf5af0ef7a99a1fc9fbb7b481e5c85b0",
                 "sha256:02f8102c2436bb03b3ee6dede1919d1dac8a427541652e5ec95171ec8adbc93a"
             ],
+            "markers": "python_version != '3.2'",
             "version": "==15.1.0"
         },
         "virtualenv-clone": {

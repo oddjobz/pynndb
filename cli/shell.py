@@ -8,6 +8,7 @@ from pathlib import Path, PosixPath
 from termcolor import colored
 from cli.dbpp import db_pretty_print
 
+__version__ = '0.0.1'
 
 class App(Cmd):
 
@@ -45,6 +46,11 @@ class App(Cmd):
         super().__init__()
 
     def preloop(self):
+        print()
+        print(colored('PyNNDB Command Line Interface '.format(__version__), 'green'), end='')
+        print(colored('v{}'.format(__version__), 'red'))
+
+
         try:
             readline.read_history_file(str(self._line))
         except FileNotFoundError:
@@ -90,10 +96,10 @@ class App(Cmd):
             mdb = database / 'data.mdb'
             stat = mdb.stat()
             dbpp.append({
-                'name': database.parts[-1],
-                'mapped': int(stat.st_size / M),
-                'used': int(stat.st_blocks * 512 / M),
-                'percent':  int((stat.st_blocks * 512 * 100) / stat.st_size)
+                'Database name': database.parts[-1],
+                'Mapped (M)': int(stat.st_size / M),
+                'Used (M)': int(stat.st_blocks * 512 / M),
+                'Util (%)':  int((stat.st_blocks * 512 * 100) / stat.st_size)
             })
         dbpp.reformat()
         for line in dbpp:
@@ -105,14 +111,17 @@ class App(Cmd):
         if not self._db:
             return self.ppfeedback('show_tables', 'error', 'no database selected')
 
-        M = 1024 * 1024
         dbpp = db_pretty_print()
         for name in self._db.tables:
             table = self._db.table(name)
+            db = self._db.env.open_db(name.encode())
+            with self._db.env.begin() as txn:
+                print(txn.stat(db))
+
             dbpp.append({
-                'name': name,
-                'records': table.records,
-                'indexes': ', '.join(table.indexes())
+                'Table name': name,
+                '# Recs': table.records,
+                'Index names': ', '.join(table.indexes())
             })
         dbpp.reformat()
         for line in dbpp:
