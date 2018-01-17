@@ -1,18 +1,20 @@
 #!/usr/bin/env python3
 
 import readline
+from ujson import loads
 from cmd2 import Cmd, with_argument_parser
 from argparse import ArgumentParser
 from pynndb import Database
 from pathlib import Path, PosixPath
 from termcolor import colored
 from cli.dbpp import db_pretty_print
+from ascii_graph import Pyasciigraph
 
 __version__ = '0.0.1'
 
 class App(Cmd):
 
-    database = ''
+    limit = 10
 
     _data = None
     _base = None
@@ -34,7 +36,7 @@ class App(Cmd):
             self.pfeedback('error: unable to open configuration folder')
             exit(1)
 
-        self.settable.update({'database': 'Name of currently selected database'})
+        self.settable.update({'limit': 'The maximum number of records to return'})
         self.prompt = self._default_prompt
         self.exclude_from_help.append('do_save')
         self.exclude_from_help.append('do_py')
@@ -116,11 +118,12 @@ class App(Cmd):
             table = self._db.table(name)
             db = self._db.env.open_db(name.encode())
             with self._db.env.begin() as txn:
-                print(txn.stat(db))
-
+                stat = txn.stat(db)
             dbpp.append({
                 'Table name': name,
-                '# Recs': table.records,
+                '# Recs': stat['entries'],
+                'Depth': stat['depth'],
+                'Oflow%': int(int(stat['overflow_pages'])*100/int(stat['leaf_pages'])),
                 'Index names': ', '.join(table.indexes())
             })
         dbpp.reformat()
@@ -150,6 +153,140 @@ class App(Cmd):
             self.prompt = colored(database, 'green') + colored('>', 'blue') + ' '
         except Exception as e:
             return self.ppfeedback('register', 'error', 'failed to open database "{}"'.format(database))
+
+    parser = ArgumentParser()
+    parser.add_argument('table', nargs=1, help='the name of the table')
+
+    @with_argument_parser(parser)
+    def do_explain(self, argv, opts):
+        """Sample the fields and field types in use in this table\n"""
+        if not self._db:
+            return self.ppfeedback('explain', 'error', 'no database selected')
+
+        table_name = opts.table[0]
+        if table_name not in self._db.tables:
+            return self.ppfeedback('register', 'error', 'table does not exist "{}"'.format(table_name))
+
+        table = self._db.table(table_name)
+        keys = {}
+        samples = {}
+        for doc in table.find(limit=10):
+            for key in doc.keys():
+                if key == '_id':
+                    continue
+                ktype = type(doc[key]).__name__
+                if ktype in ['str', 'int', 'bool', 'bytes', 'float']:
+                    sample = doc.get(key)
+                    if sample:
+                        if ktype == 'bytes':
+                            sample = sample.decode()
+                        samples[key] = sample
+
+                if key not in keys:
+                    keys[key] = [ktype]
+                else:
+                    if ktype not in keys[key]:
+                        keys[key].append(ktype)
+
+        dbpp = db_pretty_print()
+        [dbpp.append({'Field name': key, 'Field Types': keys[key], 'Sample': samples.get(key, '')}) for key in keys]
+        dbpp.reformat()
+        for line in dbpp:
+            print(line)
+
+    parser = ArgumentParser()
+    parser.add_argument('table', nargs=1, help='the name of the table')
+
+    @with_argument_parser(parser)
+    def do_analyse(self, argv, opts):
+        """Analyse a table to see how record sizes are broken down\n"""
+        if not self._db:
+            return self.ppfeedback('explain', 'error', 'no database selected')
+
+        table_name = opts.table[0]
+        if table_name not in self._db.tables:
+            return self.ppfeedback('register', 'error', 'table does not exist "{}"'.format(table_name))
+
+        db = self._db.env.open_db(table_name.encode())
+        with self._db.env.begin() as txn:
+            with txn.cursor(db) as cursor:
+                count = 0
+                rtot = 0
+                rmax = 0
+                vals = []
+                fn = cursor.first
+                while fn():
+                    rlen = len(cursor.value().decode())
+                    rtot += rlen
+                    vals.append(rlen)
+                    if rlen > rmax:
+                        rmax = rlen
+                    count += 1
+                    fn = cursor.next
+
+        MAX=20
+        div = rmax / MAX
+        arr = [0 for i in range(MAX+1)]
+        for item in vals:
+            idx = int(item / div)
+            arr[idx] += 1
+
+        test = []
+        n = div
+        for item in arr:
+            label = int(n)
+            if n > 1024:
+                label = str(int(n / 1024)) + 'K' if n > 1024 else str(label)
+            else:
+                label = str(label)
+
+            test.append((label, item))
+            n += div
+
+        graph = Pyasciigraph()
+        print()
+        for line in graph.graph('Breakdown of record size distribution', test):
+            print(line)
+
+    parser = ArgumentParser()
+    parser.add_argument('table', nargs=1, help='the table you want records from')
+    parser.add_argument('fields', nargs='*', help='the fields to display: field:format [field:format..]')
+    parser.add_argument('-b', '--by', type=str, help='index to search and sort by')
+    parser.add_argument('-k', '--key', type=str, help='key expression to search by')
+
+    @with_argument_parser(parser)
+    def do_find(self, argv, opts):
+        """Select records from a table
+
+        find --by=(index) --key=(key) field:format [field:format..]
+        """
+        if not self._db:
+            return self.ppfeedback('find', 'error', 'no database selected')
+
+        table_name = opts.table[0]
+        if table_name not in self._db.tables:
+            return self.ppfeedback('find', 'error', 'table does not exist "{}"'.format(table_name))
+
+        table = self._db.table(table_name)
+        if opts.by and opts.by not in table.indexes():
+            return self.ppfeedback('find', 'error', 'index does not exist "{}"'.format(opts.by))
+
+        args = []
+        kwrgs = {'limit': self.limit}
+        action = table.find
+
+        if opts.by:
+            args.append(opts.by)
+        if opts.key and opts.by:
+            action = table.seek
+            args.append(loads(opts.key))
+
+        query = action(*args, **kwrgs)
+        dbpp = db_pretty_print()
+        [dbpp.append({k: doc[k] for k in opts.fields}) for doc in query]
+        dbpp.reformat()
+        for line in dbpp:
+            print(line)
 
 
 app = App()

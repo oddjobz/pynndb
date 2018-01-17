@@ -450,7 +450,7 @@ class Table(object):
                             break
             return count
 
-    def seek(self, index, record, txn=None):
+    def seek(self, index, record, limit=maxsize, txn=None):
         """
         Find all records matching the key in the specified index.
 
@@ -458,6 +458,7 @@ class Table(object):
         :type index: str
         :param record: A template record containing the fields to search on
         :type record: dict
+        :param limit: maximum number of records to return
         :param txn: An optional transaction
         :type txn: Transaction
         :return: The records with matching keys (generator)
@@ -468,7 +469,9 @@ class Table(object):
             index = self._indexes[index]
             with index.cursor(txn) as cursor:
                 index.set_key(cursor, record)
-                while True:
+                count = 0
+                while count < limit:
+                    count += 1
                     if not cursor.key():
                         break
                     key = cursor.value()
