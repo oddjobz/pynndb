@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 
 import readline
-import argcomplete
 from os import listdir
 from datetime import datetime
-from ujson import loads
+from ujson import loads, dumps
 from cmd2 import Cmd, with_argument_parser
 from argparse import ArgumentParser
 from pynndb import Database
@@ -12,17 +11,16 @@ from pathlib import Path, PosixPath
 from termcolor import colored
 from cli.dbpp import db_pretty_print
 from ascii_graph import Pyasciigraph
+from pygments import highlight, lexers, formatters
 
 __version__ = '0.0.1'
 
-# TODO: auto table complete for indexes
 # TODO: add -c flag to display total count
 # TODO: unique without an index
 # TODO: handle list types var a.b.[c]
 # TODO: make a generic function available for indexing
 # TODO: date serialisation
 # TODO: full-text-index
-# TODO: add -d / dump output https://stackoverflow.com/questions/25638905/coloring-json-output-in-python
 
 
 class App(Cmd):
@@ -242,6 +240,9 @@ class App(Cmd):
     parser.add_argument('-b', '--by', type=str, help='index to search and sort by')
     parser.add_argument('-k', '--key', type=str, help='key expression to search by')
     parser.add_argument('-e', '--expr', type=str, help='expression to filter by')
+    parser.add_argument('-l', '--limit', nargs=1, help='limit output to (n) records')
+    parser.add_argument('-d', '--dump', action='store_true', help='output in JSON format')
+
 
     @with_argument_parser(parser)
     def do_find(self, argv, opts):
@@ -260,8 +261,10 @@ class App(Cmd):
         if opts.by and opts.by not in table.indexes():
             return self.ppfeedback('find', 'error', 'index does not exist "{}"'.format(opts.by))
 
+        limit = int(opts.limit[0]) if opts.limit else self.limit
+
         args = []
-        kwrgs = {'limit': self.limit}
+        kwrgs = {'limit': limit}
         action = table.find
 
         ## implement expr
@@ -282,20 +285,25 @@ class App(Cmd):
             return doc
 
         query = action(*args, **kwrgs)
-        dbpp = db_pretty_print()
-        beg = datetime.now()
-        [dbpp.append({k: docval(doc, k) for k in opts.fields}) for doc in query]
-        end = datetime.now()
-        dbpp.reformat()
-        for line in dbpp:
-            print(line)
 
-        count = colored(str(dbpp.len), 'yellow')
-        tspan = colored('{:0.4f}'.format((end-beg).total_seconds()), 'yellow')
-        limit = '' if dbpp.len < self.limit else colored('(Limited view)', 'red')
-        persc = colored('{}/sec'.format(int(1 / (end-beg).total_seconds() * dbpp.len)), 'cyan')
-        self.pfeedback(colored('Displayed {} records in {}s {} {}'.format(count, tspan, limit, persc), 'green'))
-        return False
+        if opts.dump:
+            for doc in query:
+                json = dumps(doc, sort_keys=True, indent=4)
+                print(highlight(json, lexers.JsonLexer(), formatters.TerminalFormatter()))
+        else:
+            dbpp = db_pretty_print()
+            beg = datetime.now()
+            [dbpp.append({k: docval(doc, k) for k in opts.fields}) for doc in query]
+            end = datetime.now()
+            dbpp.reformat()
+            for line in dbpp:
+                print(line)
+
+            count = colored(str(dbpp.len), 'yellow')
+            tspan = colored('{:0.4f}'.format((end-beg).total_seconds()), 'yellow')
+            limit = '' if dbpp.len < self.limit else colored('(Limited view)', 'red')
+            persc = colored('{}/sec'.format(int(1 / (end-beg).total_seconds() * dbpp.len)), 'cyan')
+            self.pfeedback(colored('Displayed {} records in {}s {} {}'.format(count, tspan, limit, persc), 'green'))
 
     def complete_find(self, text, line, begidx, endidx):
         words = line.split(' ')

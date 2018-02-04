@@ -23,7 +23,7 @@ termcolor = "*"
 ascii-graph = "*"
 pynndb = "*"
 cython = "*"
-argcomplete = "*"
+pygments = "*"
 
 
 [dev-packages]
