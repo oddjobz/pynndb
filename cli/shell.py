@@ -242,6 +242,7 @@ class App(Cmd):
     parser.add_argument('-e', '--expr', type=str, help='expression to filter by')
     parser.add_argument('-l', '--limit', nargs=1, help='limit output to (n) records')
     parser.add_argument('-d', '--dump', action='store_true', help='output in JSON format')
+    parser.add_argument('-c', '--count', action='store_true', help='count the total number of results available')
 
 
     @with_argument_parser(parser)
@@ -264,6 +265,7 @@ class App(Cmd):
         limit = int(opts.limit[0]) if opts.limit else self.limit
 
         args = []
+        count = 0
         kwrgs = {'limit': limit}
         action = table.find
 
@@ -284,6 +286,9 @@ class App(Cmd):
                 doc = doc.get(k, {})
             return doc
 
+        if opts.count:
+            maxrec = sum(1 for doc in action(*args))
+
         query = action(*args, **kwrgs)
 
         if opts.dump:
@@ -299,11 +304,14 @@ class App(Cmd):
             for line in dbpp:
                 print(line)
 
-            count = colored(str(dbpp.len), 'yellow')
             tspan = colored('{:0.4f}'.format((end-beg).total_seconds()), 'yellow')
             limit = '' if dbpp.len < self.limit else colored('(Limited view)', 'red')
             persc = colored('{}/sec'.format(int(1 / (end-beg).total_seconds() * dbpp.len)), 'cyan')
-            self.pfeedback(colored('Displayed {} records in {}s {} {}'.format(count, tspan, limit, persc), 'green'))
+            displayed = colored('Displayed {}'.format(colored(str(dbpp.len), 'yellow')),'green')
+            if opts.count:
+                displayed += colored(' of {}'.format(colored(maxrec,'yellow')), 'green')
+            displayed += colored(' records', 'green')
+            self.pfeedback(colored('{} in {}s {} {}'.format(displayed, tspan, limit, persc), 'green'))
 
     def complete_find(self, text, line, begidx, endidx):
         words = line.split(' ')
