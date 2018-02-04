@@ -21,6 +21,9 @@ lmdb = "*"
 readline = "*"
 termcolor = "*"
 ascii-graph = "*"
+pynndb = "*"
+cython = "*"
+argcomplete = "*"
 
 
 [dev-packages]

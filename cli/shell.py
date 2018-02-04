@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 
 import readline
+import argcomplete
+from os import listdir
+from datetime import datetime
 from ujson import loads
 from cmd2 import Cmd, with_argument_parser
 from argparse import ArgumentParser
@@ -11,6 +14,16 @@ from cli.dbpp import db_pretty_print
 from ascii_graph import Pyasciigraph
 
 __version__ = '0.0.1'
+
+# TODO: auto table complete for indexes
+# TODO: add -c flag to display total count
+# TODO: unique without an index
+# TODO: handle list types var a.b.[c]
+# TODO: make a generic function available for indexing
+# TODO: date serialisation
+# TODO: full-text-index
+# TODO: add -d / dump output https://stackoverflow.com/questions/25638905/coloring-json-output-in-python
+
 
 class App(Cmd):
 
@@ -89,46 +102,7 @@ class App(Cmd):
             return
         Path(self._base / alias).symlink_to(str(path), target_is_directory=True)
 
-    @with_argument_parser(ArgumentParser())
-    def do_show_databases(self, *args):
-        """Display a list of registered databases\n"""
-        M = 1024 * 1024
-        dbpp = db_pretty_print()
-        for database in Path(self._base).iterdir():
-            mdb = database / 'data.mdb'
-            stat = mdb.stat()
-            dbpp.append({
-                'Database name': database.parts[-1],
-                'Mapped (M)': int(stat.st_size / M),
-                'Used (M)': int(stat.st_blocks * 512 / M),
-                'Util (%)':  int((stat.st_blocks * 512 * 100) / stat.st_size)
-            })
-        dbpp.reformat()
-        for line in dbpp:
-            print(line)
-
-    @with_argument_parser(ArgumentParser())
-    def do_show_tables(self, *args):
-        """Display a list of tables available within this database\n"""
-        if not self._db:
-            return self.ppfeedback('show_tables', 'error', 'no database selected')
-
-        dbpp = db_pretty_print()
-        for name in self._db.tables:
-            table = self._db.table(name)
-            db = self._db.env.open_db(name.encode())
-            with self._db.env.begin() as txn:
-                stat = txn.stat(db)
-            dbpp.append({
-                'Table name': name,
-                '# Recs': stat['entries'],
-                'Depth': stat['depth'],
-                'Oflow%': int(int(stat['overflow_pages'])*100/int(stat['leaf_pages'])),
-                'Index names': ', '.join(table.indexes())
-            })
-        dbpp.reformat()
-        for line in dbpp:
-            print(line)
+    complete_register = Cmd.path_complete
 
     parser = ArgumentParser()
     parser.add_argument('database', nargs='?', help='name of database to use')
@@ -153,6 +127,9 @@ class App(Cmd):
             self.prompt = colored(database, 'green') + colored('>', 'blue') + ' '
         except Exception as e:
             return self.ppfeedback('register', 'error', 'failed to open database "{}"'.format(database))
+
+    def complete_use(self, text, line, begidx, endidx):
+        return [f for f in listdir(self._base) if f.startswith(text)]
 
     parser = ArgumentParser()
     parser.add_argument('table', nargs=1, help='the name of the table')
@@ -181,6 +158,11 @@ class App(Cmd):
                         if ktype == 'bytes':
                             sample = sample.decode()
                         samples[key] = sample
+                else:
+                    sample = str(doc.get(key))
+                    if len(sample) > 60:
+                        sample = sample[:60] + '...'
+                    samples[key] = sample
 
                 if key not in keys:
                     keys[key] = [ktype]
@@ -193,6 +175,9 @@ class App(Cmd):
         dbpp.reformat()
         for line in dbpp:
             print(line)
+
+    def complete_explain(self, text, line, begidx, endidx):
+        return [t for t in self._db.tables if t.startswith(text)]
 
     parser = ArgumentParser()
     parser.add_argument('table', nargs=1, help='the name of the table')
@@ -248,17 +233,21 @@ class App(Cmd):
         for line in graph.graph('Breakdown of record size distribution', test):
             print(line)
 
+    def complete_analyse(self, text, line, begidx, endidx):
+        return [t for t in self._db.tables if t.startswith(text)]
+
     parser = ArgumentParser()
     parser.add_argument('table', nargs=1, help='the table you want records from')
     parser.add_argument('fields', nargs='*', help='the fields to display: field:format [field:format..]')
     parser.add_argument('-b', '--by', type=str, help='index to search and sort by')
     parser.add_argument('-k', '--key', type=str, help='key expression to search by')
+    parser.add_argument('-e', '--expr', type=str, help='expression to filter by')
 
     @with_argument_parser(parser)
     def do_find(self, argv, opts):
         """Select records from a table
 
-        find --by=(index) --key=(key) field:format [field:format..]
+        find --by=(index) --key=(key) table field:format [field:format..]
         """
         if not self._db:
             return self.ppfeedback('find', 'error', 'no database selected')
@@ -275,18 +264,185 @@ class App(Cmd):
         kwrgs = {'limit': self.limit}
         action = table.find
 
+        ## implement expr
+
         if opts.by:
             args.append(opts.by)
         if opts.key and opts.by:
             action = table.seek
             args.append(loads(opts.key))
 
+        def docval(doc, k):
+            if '.' not in k:
+                return doc.get(k, 'null')
+            parts = k.split('.')
+            while len(parts):
+                k = parts.pop(0)
+                doc = doc.get(k, {})
+            return doc
+
         query = action(*args, **kwrgs)
         dbpp = db_pretty_print()
-        [dbpp.append({k: doc[k] for k in opts.fields}) for doc in query]
+        beg = datetime.now()
+        [dbpp.append({k: docval(doc, k) for k in opts.fields}) for doc in query]
+        end = datetime.now()
         dbpp.reformat()
         for line in dbpp:
             print(line)
+
+        count = colored(str(dbpp.len), 'yellow')
+        tspan = colored('{:0.4f}'.format((end-beg).total_seconds()), 'yellow')
+        limit = '' if dbpp.len < self.limit else colored('(Limited view)', 'red')
+        persc = colored('{}/sec'.format(int(1 / (end-beg).total_seconds() * dbpp.len)), 'cyan')
+        self.pfeedback(colored('Displayed {} records in {}s {} {}'.format(count, tspan, limit, persc), 'green'))
+        return False
+
+    def complete_find(self, text, line, begidx, endidx):
+        words = line.split(' ')
+        if len(words) > 2:
+            table_name = words[1]
+            if table_name in self._db.tables:
+                table = self._db.table(table_name)
+                doc = table.first()
+                fields = [f for f in doc.keys()]
+                return [f for f in fields if f.startswith(text)]
+
+        return [t for t in self._db.tables if t.startswith(text)]
+
+    parser = ArgumentParser()
+    parser.add_argument('table', nargs=1, help='the table you want records from')
+    parser.add_argument('field', nargs=1, help='the name of the field you are interested in')
+    parser.add_argument('-b', '--by', type=str, help='index to search and sort by')
+
+    @with_argument_parser(parser)
+    def do_unique(self, argv, opts):
+        """Display a list of unique values for a chosen field
+
+        unique find --by=(index) table field
+        """
+        if not self._db:
+            return self.ppfeedback('unique', 'error', 'no database selected')
+
+        table_name = opts.table[0]
+        if table_name not in self._db.tables:
+            return self.ppfeedback('unique', 'error', 'table does not exist "{}"'.format(table_name))
+
+        table = self._db.table(table_name)
+        if opts.by and opts.by not in table.indexes():
+            return self.ppfeedback('unique', 'error', 'index does not exist "{}"'.format(opts.by))
+        else:
+            index = table.index(opts.by)
+
+        field_name = opts.field[0]
+
+        dbpp = db_pretty_print()
+        counter = 0
+        with table.begin() as txn:
+            if index:
+                cursor = index.cursor(txn)
+                action = cursor.first
+                while action():
+                    dbpp.append({'id': str(counter), field_name: cursor.key().decode(), 'count': str(cursor.count())})
+                    action = cursor.next_nodup
+                    counter += 1
+
+        dbpp.reformat()
+        for line in dbpp:
+            print(line)
+
+    def complete_unique(self, text, line, begidx, endidx):
+        return [t for t in self._db.tables if t.startswith(text)]
+
+    def show_databases(self):
+        """Show available databases"""
+        M = 1024 * 1024
+        dbpp = db_pretty_print()
+        for database in Path(self._base).iterdir():
+            mdb = database / 'data.mdb'
+            stat = mdb.stat()
+            dbpp.append({
+                'Database name': database.parts[-1],
+                'Mapped (M)': int(stat.st_size / M),
+                'Used (M)': int(stat.st_blocks * 512 / M),
+                'Util (%)': int((stat.st_blocks * 512 * 100) / stat.st_size)
+            })
+        dbpp.reformat()
+        for line in dbpp:
+            print(line)
+
+    def show_tables(self, *args):
+        """Display a list of tables available within this database\n"""
+        dbpp = db_pretty_print()
+        for name in self._db.tables:
+            table = self._db.table(name)
+            db = self._db.env.open_db(name.encode())
+            with self._db.env.begin() as txn:
+                stat = txn.stat(db)
+            dbpp.append({
+                'Table name': name,
+                '# Recs': stat['entries'],
+                'Depth': stat['depth'],
+                'Oflow%': int(int(stat['overflow_pages'])*100/int(stat['leaf_pages'])),
+                'Index names': ', '.join(table.indexes())
+            })
+        dbpp.reformat()
+        for line in dbpp:
+            print(line)
+
+    def show_indexes(self, table_name):
+        """Display a list of indexes for the specified table\n"""
+        table = self._db.table(table_name)
+        dbpp = db_pretty_print()
+
+        with table.begin() as txn:
+            for index in table.indexes(txn=txn):
+                key = '_{}_{}'.format(table_name, index)
+                doc = loads(txn.get(key.encode(), db=self._db._meta._db).decode())
+                dbpp.append({
+                    'Table name': table_name if table_name else 'None',
+                    'Index name': index if index else 'None',
+                    'Entries': table.index(index).count(),
+                    'Key': doc.get('func') if doc.get('func') else 'None',
+                    'Dups': 'True' if doc['conf'].get('dupsort') else 'False',
+                    'Create': 'True' if doc['conf'].get('create') else 'False'
+                })
+        dbpp.reformat()
+        for line in dbpp:
+            print(line)
+
+    parser = ArgumentParser()
+    parser.add_argument('option', choices=['settings', 'databases', 'tables', 'indexes'], help='what it is we want to show')
+    parser.add_argument('table', nargs='?', help='')
+
+    @with_argument_parser(parser)
+    def do_show(self, argv, opts):
+        """Show various settings"""
+
+        if opts.option == 'databases':
+            return self.show_databases()
+
+        if opts.option == 'settings':
+            return super().do_show('')
+
+        if not self._db:
+            return self.ppfeedback('unique', 'error', 'no database selected')
+
+        if opts.option == 'tables':
+            return self.show_tables()
+
+        if opts.option == 'indexes':
+            table_name = opts.table
+            if table_name not in self._db.tables:
+                return self.ppfeedback('register', 'error', 'table does not exist "{}"'.format(table_name))
+            return self.show_indexes(table_name)
+
+    def complete_show(self, text, line, begidx, endidx):
+        words = line.split(' ')
+        if len(words) < 3:
+            return [i for i in ['settings', 'databases', 'indexes', 'tables'] if i.startswith(text)]
+
+        if words[1] == 'indexes':
+            return [t for t in self._db.tables if t.startswith(text)]
 
 
 app = App()

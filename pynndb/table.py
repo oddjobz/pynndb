@@ -516,8 +516,6 @@ class Table(object):
         :raises: lmdb_IndexMissing if the index does not exist
         """
         if name not in self._indexes: raise xIndexMissing
-
-        if name not in self._indexes: raise xIndexMissing
         self._indexes[name].drop(txn)
         del self._indexes[name]
         if not txn.delete(_index_name(self, name).encode(), db=self._ctx._meta._db): raise xWriteFail
