@@ -351,40 +351,40 @@ class Table(object):
         """
         with self.begin() as transaction:
             txn = txn if txn else transaction
-            cursor = txn.cursor(db=self._db)
-            if key and key != '0':
-                if type(key) != bytes:
-                    key = key.encode()
-                if not cursor.get(key):
-                    return None
-                if not cursor.next():
-                    return None
-            for key, val in cursor.iternext(keys=True, values=True):
-                record = loads(val.decode())
-                record['_id'] = key
-                yield record
+            with txn.cursor(db=self._db) as cursor:
+                if key and key != '0':
+                    if type(key) != bytes:
+                        key = key.encode()
+                    if not cursor.get(key):
+                        return None
+                    if not cursor.next():
+                        return None
+                for key, val in cursor.iternext(keys=True, values=True):
+                    record = loads(val.decode())
+                    record['_id'] = key
+                    yield record
 
     def first(self, txn=None):
         with self.begin() as transaction:
             txn = txn if txn else transaction
-            cursor = txn.cursor(db=self._db)
-            if not cursor.first():
-                return None
-            key, val = cursor.item()
-            doc = loads(val.decode())
-            doc['_id'] = key
-            return doc
+            with txn.cursor(db=self._db) as cursor:
+                if not cursor.first():
+                    return None
+                key, val = cursor.item()
+                doc = loads(val.decode())
+                doc['_id'] = key
+                return doc
 
     def last(self, txn=None):
         with self.begin() as transaction:
             txn = txn if txn else transaction
-            cursor = txn.cursor(db=self._db)
-            if not cursor.last():
-                return None
-            key, val = cursor.item()
-            doc = loads(val.decode())
-            doc['_id'] = key
-            return doc
+            with txn.cursor(db=self._db) as cursor:
+                if not cursor.last():
+                    return None
+                key, val = cursor.item()
+                doc = loads(val.decode())
+                doc['_id'] = key
+                return doc
 
     def ensure(self, index, func, duplicates=False, force=False):
         """
@@ -556,12 +556,6 @@ class Table(object):
         with self._ctx.env.begin() as txn:
             return txn.stat(self._db).get('entries', 0)
 
-        # with self.begin() as transaction:
-        #     txn = txn if txn else transaction
-        #     val = txn.stat(self._db).get('entries', 0)
-        #     txn = None
-        #     return val
-
     @property
     def name(self):
         """
@@ -570,4 +564,3 @@ class Table(object):
         :type: str
         """
         return self._name
-
