@@ -4,7 +4,7 @@ import readline
 from os import listdir
 from datetime import datetime
 from ujson import loads, dumps
-from cmd2 import Cmd, with_argument_parser
+from cmd2 import Cmd, with_argparser
 from argparse import ArgumentParser
 from pynndb import Database
 from pathlib import Path, PosixPath
@@ -15,12 +15,15 @@ from pygments import highlight, lexers, formatters
 
 __version__ = '0.0.1'
 
-# TODO: add -c flag to display total count
+# TODO: add a command to adjust the mapsize
 # TODO: unique without an index
+# TODO: add uuid1 to db as database identifier
+# TODO: use 'replace' when indexing instead of delete/put
+# TODO: implement Queue structure in table
 # TODO: handle list types var a.b.[c]
 # TODO: make a generic function available for indexing
 # TODO: date serialisation
-# TODO: full-text-index
+# TODO: full-text-index - Xapian
 
 
 class App(Cmd):
@@ -49,13 +52,11 @@ class App(Cmd):
 
         self.settable.update({'limit': 'The maximum number of records to return'})
         self.prompt = self._default_prompt
-        self.exclude_from_help.append('do_save')
-        self.exclude_from_help.append('do_py')
-        self.exclude_from_help.append('do__relative_load')
-        self.exclude_from_help.append('do_run')
-        self.exclude_from_help.append('do_cmdenvironment')
+        self.exclude_from_help.append('do_shell')
+        self.exclude_from_help.append('do_edit')
         self.exclude_from_help.append('do_load')
         self.exclude_from_help.append('do_pyscript')
+        self.exclude_from_help.append('do_py')
         super().__init__()
 
     def preloop(self):
@@ -81,8 +82,8 @@ class App(Cmd):
     parser.add_argument('database', nargs=1, help='path name of database to register')
     parser.add_argument('alias', nargs=1, help='the local alias for the database')
 
-    @with_argument_parser(parser)
-    def do_register(self, argv, opts):
+    @with_argparser(parser)
+    def do_register(self, opts):
         """Register a new database with this tool\n"""
         database = opts.database[0]
         alias = opts.alias[0]
@@ -105,8 +106,8 @@ class App(Cmd):
     parser = ArgumentParser()
     parser.add_argument('database', nargs='?', help='name of database to use')
 
-    @with_argument_parser(parser)
-    def do_use(self, argv, opts):
+    @with_argparser(parser)
+    def do_use(self, opts):
         """Select the database you want to work with\n"""
         if self._db:
             self._db.close()
@@ -127,13 +128,13 @@ class App(Cmd):
             return self.ppfeedback('register', 'error', 'failed to open database "{}"'.format(database))
 
     def complete_use(self, text, line, begidx, endidx):
-        return [f for f in listdir(self._base) if f.startswith(text)]
+        return [f for f in listdir(str(self._base)) if f.startswith(text)]
 
     parser = ArgumentParser()
     parser.add_argument('table', nargs=1, help='the name of the table')
 
-    @with_argument_parser(parser)
-    def do_explain(self, argv, opts):
+    @with_argparser(parser)
+    def do_explain(self, opts):
         """Sample the fields and field types in use in this table\n"""
         if not self._db:
             return self.ppfeedback('explain', 'error', 'no database selected')
@@ -180,8 +181,8 @@ class App(Cmd):
     parser = ArgumentParser()
     parser.add_argument('table', nargs=1, help='the name of the table')
 
-    @with_argument_parser(parser)
-    def do_analyse(self, argv, opts):
+    @with_argparser(parser)
+    def do_analyse(self, opts):
         """Analyse a table to see how record sizes are broken down\n"""
         if not self._db:
             return self.ppfeedback('explain', 'error', 'no database selected')
@@ -245,8 +246,8 @@ class App(Cmd):
     parser.add_argument('-c', '--count', action='store_true', help='count the total number of results available')
 
 
-    @with_argument_parser(parser)
-    def do_find(self, argv, opts):
+    @with_argparser(parser)
+    def do_find(self, opts):
         """Select records from a table
 
         find --by=(index) --key=(key) table field:format [field:format..]
@@ -330,8 +331,8 @@ class App(Cmd):
     parser.add_argument('field', nargs=1, help='the name of the field you are interested in')
     parser.add_argument('-b', '--by', type=str, help='index to search and sort by')
 
-    @with_argument_parser(parser)
-    def do_unique(self, argv, opts):
+    @with_argparser(parser)
+    def do_unique(self, opts):
         """Display a list of unique values for a chosen field
 
         unique find --by=(index) table field
@@ -430,8 +431,8 @@ class App(Cmd):
     parser.add_argument('option', choices=['settings', 'databases', 'tables', 'indexes'], help='what it is we want to show')
     parser.add_argument('table', nargs='?', help='')
 
-    @with_argument_parser(parser)
-    def do_show(self, argv, opts):
+    @with_argparser(parser)
+    def do_show(self, opts):
         """Show various settings"""
 
         if opts.option == 'databases':
