@@ -1,5 +1,37 @@
 #!/usr/bin/env python3
-
+##############################################################################
+#
+# MIT License
+#
+# Copyright (c) 2017 Gareth Bult
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+##############################################################################
+#
+#   This module is for use with "pyipe" although it could be used elsewhere.
+#   It's sole purpose is to buffer items passing through the pipe and reformat
+#   them in a traditional / recognisable way. It's completely database
+#   agnostic and will with with a flexible schema, so applied to both SQL
+#   and noSQL tables / collections.
+#
+##############################################################################
 import readline
 from os import listdir
 from datetime import datetime
@@ -9,11 +41,11 @@ from argparse import ArgumentParser
 from pynndb import Database
 from pathlib import Path, PosixPath
 from termcolor import colored
-from cli.dbpp import db_pretty_print
 from ascii_graph import Pyasciigraph
 from pygments import highlight, lexers, formatters
+from termcolor import colored
 
-__version__ = '0.0.1'
+__version__ = '1.0.0'
 
 # TODO: add a command to adjust the mapsize
 # TODO: unique without an index
@@ -26,6 +58,119 @@ __version__ = '0.0.1'
 # TODO: full-text-index - Xapian
 
 
+class placeholder():
+
+    def __format__(self, spec):
+        return '~'
+
+    def __getitem__(self, name):
+        return self
+
+
+class preformat(dict):
+    def __getitem__(self, name):
+        value = self.get(name)
+        if isinstance(value, dict):
+            value = str(value)
+        if isinstance(value, bytes):
+            value = value.encode()
+        return value if value is not None else placeholder()
+
+
+class db_pretty_print(object):
+
+    def __init__(self, *args, **kwargs):
+        self._items = []
+        self._lengths = {}
+        self._kwargs = kwargs
+        self._out = None
+
+    def __iter__(self):
+        self.index = 0
+        return self
+
+    def __contains__(self, key):
+        return key in self._items
+
+    def __next__(self):
+        if not self.index:
+            self.reformat()
+            self.limit = len(self._out)
+        if self.index == self.limit:
+            raise StopIteration
+        self.index += 1
+        return self._out[self.index-1]
+
+    @property
+    def len(self):
+        return len(self._items)
+
+    def append(self, data):
+        if not data: return
+        output = {}
+        for k, v in data.items():
+            k = k.replace('.', '_')
+            if isinstance(v, list) or isinstance(v,dict):
+                v = str(v)
+                if len(v) > 60:
+                    v = v[:60] + '...'
+
+            if k in self._kwargs:
+                if self._kwargs[k] == 'datetime':
+                    v = datetime.fromtimestamp(v).ctime()
+            kl = len(k)
+            vl = len(str(v))
+            mx = max(kl, vl)
+            if ((k in self._lengths) and (mx > self._lengths[k])) or (k not in self._lengths):
+                self._lengths[k] = mx
+            output[k] = v
+
+        self._items.append(output)
+
+    def reformat(self):
+        separator = ''
+        fmt = ''
+        data = {}
+        #
+        c = '┌'
+        for k,v in self._lengths.items():
+            separator += c + '─'*(v+2)
+            c = '┬'
+        for k,v in self._lengths.items():
+            fmt += colored('│ ', 'green')+colored('{'+k+':'+str(v)+'} ', 'cyan')
+            data[k] = k
+        separator += '┐'
+        fmt += colored('│', 'green')
+        separator1 = colored(separator, 'green')
+        separator2 = separator1.replace('┌', '├').replace('┐', '┤').replace('┬', '┼')
+        separator3 = separator1.replace('┌', '└').replace('┐', '┘').replace('┬', '┴')
+        self._out = []
+        self._out.append(separator1)
+        try:
+            self._out.append(fmt.format(**data))
+        except:
+            print('Error while formatting')
+            print('Format=', fmt)
+            print('Data=', data)
+            exit(1)
+        self._out.append(separator2)
+        fmt = ''
+        for k, v in self._lengths.items():
+            fmt += colored('│ ', 'green')+colored('{'+k+':'+str(v)+'} ', 'yellow')
+        fmt += colored('│', 'green')
+        for item in self._items:
+            if isinstance(item.get('_id'), bytes):
+                item['_id'] = item['_id'].decode()
+            try:
+                self._out.append(fmt.format(**preformat(item)))
+            except Exception as e:
+                for i in item.keys():
+                    if item[i] is None:
+                        item[i] = '(None)'
+                self._out.append(fmt.format(**preformat(item)))
+        self._out.append(separator3)
+
+
 class App(Cmd):
 
     limit = 10
@@ -36,6 +181,7 @@ class App(Cmd):
     _default_prompt = colored('pynndb', 'cyan') + colored('>', 'blue') + ' '
 
     def __init__(self):
+        super().__init__()
         path = PosixPath('~/.pynndb').expanduser()
         Path.mkdir(path, exist_ok=True)
         if not path.is_dir():
@@ -52,12 +198,12 @@ class App(Cmd):
 
         self.settable.update({'limit': 'The maximum number of records to return'})
         self.prompt = self._default_prompt
-        self.exclude_from_help.append('do_shell')
-        self.exclude_from_help.append('do_edit')
-        self.exclude_from_help.append('do_load')
-        self.exclude_from_help.append('do_pyscript')
-        self.exclude_from_help.append('do_py')
-        super().__init__()
+
+        self.do_shell = None
+        self.do_edit = None
+        self.do_load = None
+        self.do_pyscript = None
+        self.do_py = None
 
     def preloop(self):
         print()
@@ -395,11 +541,12 @@ class App(Cmd):
             db = self._db.env.open_db(name.encode())
             with self._db.env.begin() as txn:
                 stat = txn.stat(db)
+            l = int(stat['leaf_pages'])
             dbpp.append({
                 'Table name': name,
                 '# Recs': stat['entries'],
                 'Depth': stat['depth'],
-                'Oflow%': int(int(stat['overflow_pages'])*100/int(stat['leaf_pages'])),
+                'Oflow%': int(int(stat['overflow_pages'])*100/(l if l else 1)),
                 'Index names': ', '.join(table.indexes())
             })
         dbpp.reformat()
