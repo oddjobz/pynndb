@@ -5,7 +5,6 @@ PyNNDB - Python Native NoSQL Database
     :target: https://travis-ci.org/oddjobz/pynndb
 
 .. image:: coverage.svg
-    :target: https://codecov.io/gh/oddjobz/pymamba
 
 PyNNDB is the second iteration of PyMamba, the name change reflects a conflict with another project
 of the same name, and a degree of incompatibility between the API in the old and new versions. At
@@ -45,7 +44,7 @@ This is an example of how to create a new database called my-database, then with
 
 .. code-block:: python
 
-    from pymamba import Database
+    from pynndb import Database
     db = Database('my-database')
     people = db.table('people')
     people.append({'name': 'Fred Bloggs', 'age': 21})
@@ -176,7 +175,7 @@ There's a lot more to come, but so far it's looking pretty promising. On my work
 ORM - Object Relational Mapper
 ==============================
 
-The native PyMamba interface is not unlike Mongo in that it treats each record (or document) as a Python dictionary. For databases that involve single / unrelated tables, this is fine and the most efficient means to access data. If however you're mapping relationships between tables, as you might with a traditional SQL database, maintaining linkage tables can be a bit fiddly, and it you're used to something like SQLAlchemy, the standard interface may seem a little raw.
+The native PyNNDB interface is not unlike Mongo in that it treats each record (or document) as a Python dictionary. For databases that involve single / unrelated tables, this is fine and the most efficient means to access data. If however you're mapping relationships between tables, as you might with a traditional SQL database, maintaining linkage tables can be a bit fiddly, and it you're used to something like SQLAlchemy, the standard interface may seem a little raw.
 
 To this end we have a built-in mechanism for overlaying some structure onto our raw tables to give things a bit of an Alchemy feel. If you're not used to ORM's then this might look a bit like magic, but for SQLAlchemy users, you should feel right at home and hopefully wondering why SQLAlchemy isn't this easy ... ;-)
 
@@ -217,9 +216,9 @@ The idea is that we wrap each table up in a dedicated class then we can create a
 
 .. code-block:: python
 
-    from pymamba import Database
-    from pymamba.models import ManyToMany, Table
-    from pymamba.types import AgeType, DateType
+    from pynndb import Database
+    from pynndb.models import ManyToMany, Table
+    from pynndb.types import AgeType, DateType
 
     class UserModel(Table):
         _calculated = {
@@ -351,7 +350,7 @@ So there are some interesting things going on here, we have created a new instan
     >>> user.addresses
     [{'address': 'address1', 'postcode': 'postcode1', '_id': b'59b6860b1839fc4ee8c00597'}, {'address': 'address2', 'postcode': 'postcode2', '_id': b'59b6860b1839fc4ee8c00599'}]
     >>> type(user.addresses[0])
-    <class 'pymamba.models.BaseModel'>
+    <class 'pynndb.models.BaseModel'>
 
 Again, virtual and calculated fields are only evaluated when reading through the users table, the cost of reading associated tables is only incurred if the linked attributes (addresses in this case) are accessed. Note that the addresses field is a list, but of type BaseModel, rather than of a raw dict.
 
