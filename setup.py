@@ -58,7 +58,7 @@ setup(
     data_files=[('', ['Pipfile'])],
     entry_points = {
         'console_scripts': [
-            'pynndb = pynndb_shell.pynndb_shell'
+            'pynndb = pynndb_shell.__init__:main'
         ]
     }
 )
