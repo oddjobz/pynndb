@@ -118,7 +118,7 @@ class Database(object):
         """
         Close the current database
         """
-        if self._env:
+        if hasattr(self, '_env') and self._env:
             self._env.close()
             self._env = None
 

@@ -29,13 +29,13 @@ What stable features does it have?
 
 What Features can I try?
 ------------------------
-* A native Object Relational Mapper, typically seen with SQL databases, loosely based on SQLAlchemy
+* Native command line shell [pynndb]
 
 What Features are in development?
 ---------------------------------
 * High speed multi-node replication
-* Native command line shell
 * ReadTheDocs documentation
+* A native Object Relational Mapper, typically seen with SQL databases, loosely based on SQLAlchemy
 
 -------------------
 Some basic Examples

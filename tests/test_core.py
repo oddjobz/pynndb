@@ -420,7 +420,6 @@ class UnitTests(unittest.TestCase):
         upper = {'cat': 'B', 'name': 'Gareth Bult1'}
         iter = table.range('by_compound', lower, upper)
         results = list(iter)
-        print(results)
 
         self.assertEqual(results[0]['name'], 'Squizzey')
         self.assertEqual(results[1]['name'], 'Gareth Bult1')

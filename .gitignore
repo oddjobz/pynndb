@@ -105,3 +105,6 @@ ENV/
 
 # Local DB's
 databases/*
+
+examples/doc
+*.mdb

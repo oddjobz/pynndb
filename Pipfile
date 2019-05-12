@@ -1,12 +1,10 @@
 [[source]]
-
 url = "https://pypi.python.org/simple"
 verify_ssl = true
 name = "pypi"
 
-
 [packages]
-
+cmd2 = "*"
 bson = "*"
 ujson = "*"
 ujson-delta = "*"
@@ -18,12 +16,18 @@ pytest = "*"
 posix-ipc = "*"
 tox = "*"
 lmdb = "*"
-
+readline = "*"
+termcolor = "*"
+ascii-graph = "*"
+pynndb = "*"
+cython = "*"
+pygments = "*"
+travis-encrypt = "*"
 
 [dev-packages]
-
 pytest = "*"
 pytest-cov = "*"
 "unittest2" = "*"
 coverage = "*"
 coverage-badge = "*"
+tox = "*"

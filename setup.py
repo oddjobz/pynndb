@@ -14,9 +14,6 @@ requirements = convert_deps_to_pip(pfile['packages'], r=False)
 test_requirements = convert_deps_to_pip(pfile['packages'], r=False)
 requirements.append('Pipfile')
 
-print('Requirements:', requirements)
-
-
 def read(*parts):
     with codecs.open(os.path.join(here, *parts), 'r') as fp:
         return fp.read()
@@ -24,8 +21,7 @@ def read(*parts):
 
 def find_version(*file_paths):
     version_file = read(*file_paths)
-    version_match = re.search(r"^__version__ = ['\"]([^'\"]*)['\"]",
-                              version_file, re.M)
+    version_match = re.search(r"^__version__ = ['\"]([^'\"]*)['\"]", version_file, re.M)
     if version_match:
         return version_match.group(1)
     raise RuntimeError("Unable to find version string.")
@@ -34,7 +30,7 @@ def find_version(*file_paths):
 setup(
     name='pynndb',
     version=find_version("pynndb", "__init__.py"),
-    packages=['pynndb'],
+    packages=['pynndb', 'pynndb_shell'],
     url='https://github.com/oddjobz/pynndb',
     license='MIT',
     author='Gareth Bult',
@@ -46,7 +42,7 @@ setup(
         #   3 - Alpha
         #   4 - Beta
         #   5 - Production/Stable
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
         # Indicate who your project is intended for
         'Intended Audience :: Developers',
         'Topic :: Database :: Database Engines/Servers',
@@ -59,5 +55,10 @@ setup(
     keywords=['pynndb', 'database', 'LMDB', 'python', 'ORM'],
     install_requires=requirements,
     test_requires=test_requirements,
-    data_files=[('', ['Pipfile'])]
+    data_files=[('', ['Pipfile'])],
+    entry_points = {
+        'console_scripts': [
+            'pynndb = pynndb_shell.__init__:main'
+        ]
+    }
 )
