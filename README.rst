@@ -29,7 +29,7 @@ What stable features does it have?
 
 What Features can I try?
 ------------------------
-* Native command line shell [pynndb]
+* Native command line shell [pynndb docs are here](docs/shell.md)
 
 What Features are in development?
 ---------------------------------

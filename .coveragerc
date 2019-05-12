@@ -1,2 +1,9 @@
+[paths]
+source = pynndb/
+
 [run]
-omit = setup.py, examples/*
+omit =
+    */pynndb/models.py
+    */pynndb/mp.py
+    */pynndb/replication.py
+    */pynndb/types.py
