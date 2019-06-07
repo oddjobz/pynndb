@@ -2,9 +2,10 @@ import lmdb
 from sys import maxsize
 from bson import ObjectId
 from ujson import loads, dumps
-from ujson_delta import diff
+# from ujson_delta import diff
 from .index import Index
 from .utils import _index_name, xWriteFail, xNoKey, xIndexMissing, xNotFound
+
 
 def write_transaction(func):
     """
@@ -62,7 +63,7 @@ class Table(object):
         :type txn: Transaction
         :raises: xWriteFail on write error
         """
-        if not '_id' in record:
+        if '_id' not in record:
             key = str(ObjectId()).encode()
             append = True
         else:
@@ -126,8 +127,8 @@ class Table(object):
         if not txn.put(key, dumps(rec).encode(), db=self._db): raise xWriteFail('main record')
         for name in self._indexes:
             self._indexes[name].save(txn, key, old, rec)
-        if self._ctx.binlog:
-            return diff(old, record, verbose=False)
+        # if self._ctx.binlog:
+        #     return diff(old, record, verbose=False)
 
     @write_transaction
     def empty(self, txn):

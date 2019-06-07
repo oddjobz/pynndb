@@ -1,12 +1,17 @@
 language: python
 python:
 - '3.6'
-install:
-- pip install pipenv
-- pipenv install
-- pipenv install --dev
 script:
-- tox
+- tox -c tox.ini -e $TENV
+install:
+- pip install setuptools wheel tox codecov pipenv
+- pip install --force-reinstall -U "pip<19"
+matrix:
+  include:
+  - python: "3.6"
+    env: TENV=py36
+  - python: "pypy3"
+    env: TENV=pypy3
 deploy:
   provider: pypi
   user: "oddjobz"

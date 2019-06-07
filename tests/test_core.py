@@ -52,7 +52,7 @@ class UnitTests(unittest.TestCase):
 
     def generate_data1(self, db, table_name):
         with db.env.begin(write=True) as txn:
-            table = db.table(table_name)
+            table = db.table(table_name, txn)
             for row in self._data:
                 if '_id' in row:
                     del row['_id']
@@ -505,6 +505,13 @@ class UnitTests(unittest.TestCase):
         self.assertEqual(doc['name'], 'Squizzey')
 
     def test_26_drop_reuse(self):
+        db = Database(self._db_name)
+        self.generate_data1(db, self._tb_name)
+        table = db.table(self._tb_name)
+        d = db.drop(self._tb_name)
+        self.generate_data1(db, self._tb_name)
+
+    def test_27_drop_reuse(self):
 
         db = Database(self._db_name)
         table = db.table(self._tb_name)
@@ -520,13 +527,14 @@ class UnitTests(unittest.TestCase):
             _id = doc['_id']
             name = doc['name']
             break
-        #with db.begin():
-        #    db.restructure(self._tb_name)
-        #table = db.table(self._tb_name)
-        #for doc in table.find():
-        #    self.assertEqual(doc['name'], name)
-        #    self.assertEqual(doc['_id'], _id)
-        #    break
+
+        db.restructure(self._tb_name)
+
+        table = db.table(self._tb_name)
+        for doc in table.find():
+           self.assertEqual(doc['name'], name)
+           self.assertEqual(doc['_id'], _id)
+           break
 
     def test_28_range(self):
 

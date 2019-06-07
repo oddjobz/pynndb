@@ -2,17 +2,21 @@ import os
 import codecs
 import re
 from setuptools import setup
-from pipenv.project import Project
-from pipenv.utils import convert_deps_to_pip
 
 here = os.path.abspath(os.path.dirname(__file__))
 with open(os.path.join(here, 'README.rst'), encoding='utf-8') as f:
     long_description = f.read()
 
-pfile = Project(chdir=False).parsed_pipfile
-requirements = convert_deps_to_pip(pfile['packages'], r=False)
-test_requirements = convert_deps_to_pip(pfile['packages'], r=False)
-requirements.append('Pipfile')
+with open('requirements.txt') as io:
+    reqs = io.read().splitlines()
+with open('requirements-dev.txt') as io:
+    test_requirements = io.read().splitlines()
+
+requirements = []
+for r in reqs:
+    if '#' not in r:
+        requirements.append(r)
+
 
 def read(*parts):
     with codecs.open(os.path.join(here, *parts), 'r') as fp:
@@ -38,25 +42,17 @@ setup(
     description='Database library for Python based on LMDB storage engine',
     long_description=long_description,
     classifiers=[
-        # How mature is this project? Common values are
-        #   3 - Alpha
-        #   4 - Beta
-        #   5 - Production/Stable
         'Development Status :: 4 - Beta',
-        # Indicate who your project is intended for
         'Intended Audience :: Developers',
         'Topic :: Database :: Database Engines/Servers',
-        # Pick your license as you wish (should match "license" above)
-         'License :: OSI Approved :: MIT License',
-        # Specify the Python versions you support here. In particular, ensure
-        # that you indicate whether you support Python 2, Python 3 or both.
+        'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 3.6',
     ],
     keywords=['pynndb', 'database', 'LMDB', 'python', 'ORM'],
     install_requires=requirements,
-    test_requires=test_requirements,
-    data_files=[('', ['Pipfile'])],
-    entry_points = {
+    tests_require=test_requirements,
+    data_files=[('', ['requirements.txt', 'requirements-dev.txt'])],
+    entry_points={
         'console_scripts': [
             'pynndb = pynndb_shell.__init__:main'
         ]

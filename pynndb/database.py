@@ -144,14 +144,14 @@ class Database(object):
     def tables_all(self):
         return self._return_tables(True)
 
-    def _return_tables(self, all):
+    def _return_tables(self, all, txn=None):
         """
         PROPERTY - Generate a list of names of the tables associated with this database
 
         :getter: Returns a list of table names
         :type: list
         """
-        with self.env.begin() as txn:
+        def tables():
             result = []
             with lmdb.Cursor(self._db, txn) as cursor:
                 if cursor.first():
@@ -163,6 +163,12 @@ class Database(object):
                             break
             return result
 
+        if not txn:
+            with self.env.begin() as txn:
+                return tables()
+        else:
+            return tables()
+
     def drop(self, name, txn=None):
         """
         Drop a database table
@@ -170,17 +176,17 @@ class Database(object):
         :param name: Name of table to drop
         :type name: str
         """
-        if name not in self.tables_all:
+        if name not in self._return_tables(True, txn):
             raise xTableMissing
-
-        self.table(name)
+        self.table(name, txn=txn)
         if name in self._tables:
+            table = self._tables[name]
+            del self._tables[name]
             if txn:
-                self._tables[name].drop(txn=txn)
+                table.drop(txn=txn)
             else:
                 with self.env.begin(write=True) as txn:
-                    self._tables[name].drop(txn=txn)
-            del self._tables[name]
+                    table.drop(txn=txn)
 
     def restructure(self, name):
         """
@@ -190,20 +196,19 @@ class Database(object):
         :param name: Name of the table to restructure
         :type name: str
         """
-        txn = self.transaction.txn
-        if name not in self.tables: raise xTableMissing
-        src = self._tables[name]
-        dst_name = '~' + name
-        if dst_name in self.tables: raise xTableExists
-        dst = self.table(dst_name)
-        for doc in src.find():
-            dst.append(doc, txn=txn)
+        with self.env.begin(write=True) as txn:
+            if name not in self.tables: raise xTableMissing
+            src = self._tables[name]
+            dst_name = '~' + name
+            if dst_name in self.tables: raise xTableExists
+            dst = self.table(dst_name, txn=txn)
+            for doc in src.find(txn=txn):
+                dst.append(doc, txn=txn)
 
-        src.empty(txn=txn)
-        for doc in dst.find(txn=txn):
-            src.append(doc, txn=txn)
-        dst._drop(txn=txn)
-        del self._tables[dst_name]
+            src.empty(txn=txn)
+            for doc in dst.find(txn=txn):
+                src.append(doc, txn=txn)
+            self.drop(dst_name, txn=txn)
 
     def table(self, name, txn=None):
         """
@@ -229,4 +234,3 @@ class Database(object):
             return '{}M'.format(size)
         size = size / 1024
         return '{}G'.format(size)
-
