@@ -10,7 +10,7 @@ matrix:
   include:
   - python: "3.6"
     env: TENV=py36
-  - python: "3.6"
+  - python: "pypy3"
     env: TENV=pypy3
 deploy:
   provider: pypi
