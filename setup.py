@@ -14,12 +14,9 @@ with open('requirements-dev.txt') as io:
 
 requirements = []
 for r in reqs:
-    if '#' in r:
-        requirements.append(r.split('=')[-1])
-    else:
+    if '#' not in r:
         requirements.append(r)
 
-print(requirements)
 
 def read(*parts):
     with codecs.open(os.path.join(here, *parts), 'r') as fp:
