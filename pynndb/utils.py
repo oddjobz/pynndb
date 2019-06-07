@@ -1,13 +1,14 @@
 from sys import _getframe, maxsize
 from getpass import getuser
 
+
 def size_mb(size):
     """
     Helper function when creating database
     :param size: interger (size in Mb)
     :return: integer (bytes)
     """
-    return 1024*1024*size
+    return int(1024*1024*size)
 
 
 def size_gb(size):
@@ -16,7 +17,7 @@ def size_gb(size):
     :param size: interger (size in Gb)
     :return: integer (bytes)
     """
-    return 1024*1024*1024*size
+    return int(1024*1024*1024*size)
 
 
 def _debug(self, msg):
@@ -60,23 +61,6 @@ def _index_name(self, name):
     return '_{}_{}'.format(self._name, name)
 
 
-def size_mb(size):
-    """
-    Helper function when creating database
-    :param size: interger (size in Mb)
-    :return: integer (bytes)
-    """
-    return 1024*1024*size
-
-
-def size_gb(size):
-    """
-    Helper function when creating database
-    :param size: interger (size in Gb)
-    :return: integer (bytes)
-    """
-    return 1024*1024*1024*size
-
 def semaphore_path(path, peer=None):
     """
     Generate a name/path for a semaphore
@@ -88,6 +72,7 @@ def semaphore_path(path, peer=None):
     args = (getuser(), path.replace('/', '_'), peer)
     return template.format(*args)
 
+
 def get_posixtime(uuid1):
     """Convert the uuid1 timestamp to a standard posix timestamp
     """
@@ -96,6 +81,7 @@ def get_posixtime(uuid1):
     t = t - 0x01b21dd213814000
     t = t / 1e7
     return t
+
 
 class xTableExists(Exception):
     """Exception - database table already exists"""
