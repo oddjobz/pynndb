@@ -15,6 +15,7 @@ matrix:
 deploy:
   provider: pypi
   user: "oddjobz"
+  skip_existing: true
   on:
     branch: master
   password:
