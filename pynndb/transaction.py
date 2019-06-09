@@ -29,7 +29,7 @@ class Transaction(object):
 
         self._record_binlog()
         self._txn.commit()
-        self._db._semaphore.release() if self._db._semaphore else None
+        # self._db._semaphore.release() if self._db._semaphore else None
         self._txn = None
 
     def _record_binlog(self):

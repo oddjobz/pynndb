@@ -1,5 +1,5 @@
 import lmdb
-from posix_ipc import Semaphore, ExistentialError, O_CREAT
+# from posix_ipc import Semaphore, ExistentialError, O_CREAT
 from struct import pack
 from ujson import dumps
 from .table import Table
@@ -46,10 +46,10 @@ class Database(object):
             self.set_binlog(enable=False)
             if binlog:
                 self.set_binlog(enable=True)
-                try:
-                    self._semaphore = Semaphore(semaphore_path(name))
-                except ExistentialError:
-                    pass
+                # try:
+                #     self._semaphore = Semaphore(semaphore_path(name))
+                # except ExistentialError:
+                #     pass
                 self._binlog = self._env.open_db(b'__binlog__', create=binlog)
                 self._binidx = self._env.open_db(b'__binidx__', create=binlog)
                 with self._env.begin(write=True) as txn:

@@ -15,7 +15,6 @@ idna>=2.5
 importlib-metadata>=0.17
 lmdb>=0.95
 pluggy>=0.12.0
-posix-ipc>=1.0.4
 py>=1.8.0
 pycparser>=2.19
 Pygments>=2.4.2

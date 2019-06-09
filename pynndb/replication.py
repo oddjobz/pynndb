@@ -1,6 +1,6 @@
 from threading import Thread
 from queue import Empty
-from posix_ipc import Semaphore, ExistentialError, O_CREAT
+# from posix_ipc import Semaphore, ExistentialError, O_CREAT
 from time import sleep
 from datetime import datetime
 from ujson import loads, dumps
