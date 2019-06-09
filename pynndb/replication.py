@@ -5,7 +5,7 @@ from time import sleep
 from datetime import datetime
 from ujson import loads, dumps
 from bson import ObjectId
-from posix_ipc import BusyError
+# from posix_ipc import BusyError
 from .database import Database
 #from server_protocol import Protocol
 from .utils import size_gb, semaphore_path
