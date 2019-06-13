@@ -390,6 +390,7 @@ class App(Cmd):
     parser.add_argument('-l', '--limit', nargs=1, help='limit output to (n) records')
     parser.add_argument('-d', '--dump', action='store_true', help='output in JSON format')
     parser.add_argument('-c', '--count', action='store_true', help='count the total number of results available')
+    parser.add_argument('--delete', action='store_true', help='delete all matching records')
 
 
     @with_argparser(parser)
@@ -416,13 +417,13 @@ class App(Cmd):
         kwrgs = {'limit': limit}
         action = table.find
 
-        ## implement expr
-
         if opts.by:
             args.append(opts.by)
         if opts.key and opts.by:
             action = table.seek
             args.append(loads(opts.key))
+        if opts.expr:
+            kwrgs['expression'] = eval(opts.expr)
 
         def docval(doc, k):
             if '.' not in k:
@@ -438,7 +439,25 @@ class App(Cmd):
 
         query = action(*args, **kwrgs)
 
-        if opts.dump:
+        if opts.delete:
+            dbpp = db_pretty_print()
+            beg = datetime.now()
+            keys = []
+            for doc in query:
+                keys.append(doc['_id'])
+            table.delete(keys)
+            end = datetime.now()
+
+            tspan = colored('{:0.4f}'.format((end-beg).total_seconds()), 'yellow')
+            limit = '' if len(keys) < self.limit else colored('(Limited view)', 'red')
+            persc = colored('{}/sec'.format(int(1 / (end-beg).total_seconds() * len(keys))), 'cyan')
+            displayed = colored('Deleted {}'.format(colored(str(len(keys)), 'yellow')),'red')
+            if opts.count:
+                displayed += colored(' of {}'.format(colored(maxrec,'yellow')), 'green')
+            displayed += colored(' records', 'green')
+            self.pfeedback(colored('{} in {}s {} {}'.format(displayed, tspan, limit, persc), 'green'))
+
+        elif opts.dump:
             for doc in query:
                 json = dumps(doc, sort_keys=True, indent=4)
                 print(highlight(json, lexers.JsonLexer(), formatters.TerminalFormatter()))
