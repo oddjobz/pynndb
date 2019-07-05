@@ -391,7 +391,7 @@ class App(Cmd):
     parser.add_argument('-d', '--dump', action='store_true', help='output in JSON format')
     parser.add_argument('-c', '--count', action='store_true', help='count the total number of results available')
     parser.add_argument('--delete', action='store_true', help='delete all matching records')
-
+    parser.add_argument('--edit', type=str, help='edit the record')
 
     @with_argparser(parser)
     def do_find(self, opts):
@@ -445,13 +445,34 @@ class App(Cmd):
             keys = []
             for doc in query:
                 keys.append(doc['_id'])
-            table.delete(keys)
+            with self._db.env.begin(write=True) as txn:
+                table.delete(keys, txn=txn)
             end = datetime.now()
 
             tspan = colored('{:0.4f}'.format((end-beg).total_seconds()), 'yellow')
             limit = '' if len(keys) < self.limit else colored('(Limited view)', 'red')
             persc = colored('{}/sec'.format(int(1 / (end-beg).total_seconds() * len(keys))), 'cyan')
             displayed = colored('Deleted {}'.format(colored(str(len(keys)), 'yellow')),'red')
+            if opts.count:
+                displayed += colored(' of {}'.format(colored(maxrec,'yellow')), 'green')
+            displayed += colored(' records', 'green')
+            self.pfeedback(colored('{} in {}s {} {}'.format(displayed, tspan, limit, persc), 'green'))
+
+        elif opts.edit:
+            dbpp = db_pretty_print()
+            beg = datetime.now()
+            keys = []
+            fn = eval(opts.edit)
+            for doc in query:
+                keys.append(doc['_id'])
+                fn(doc)
+                table.save(doc)
+            end = datetime.now()
+
+            tspan = colored('{:0.4f}'.format((end-beg).total_seconds()), 'yellow')
+            limit = '' if len(keys) < self.limit else colored('(Limited view)', 'red')
+            persc = colored('{}/sec'.format(int(1 / (end-beg).total_seconds() * len(keys))), 'cyan')
+            displayed = colored('Edited {}'.format(colored(str(len(keys)), 'yellow')),'red')
             if opts.count:
                 displayed += colored(' of {}'.format(colored(maxrec,'yellow')), 'green')
             displayed += colored(' records', 'green')
@@ -542,11 +563,21 @@ class App(Cmd):
         for database in Path(self._base).iterdir():
             mdb = database / 'data.mdb'
             stat = mdb.stat()
+            mapped = stat.st_size
+            divisor = 1024
+            units = 'K'
+            if mapped > 1024 * 1024 * 1024:
+                divisor = 1024 * 1024 * 1024
+                units = 'G'
+            elif mapped > 1024 * 1024:
+                divisor = 1024 * 1024
+                units = 'M'
             dbpp.append({
                 'Database name': database.parts[-1],
-                'Mapped (M)': int(stat.st_size / M),
-                'Used (M)': int(stat.st_blocks * 512 / M),
-                'Util (%)': int((stat.st_blocks * 512 * 100) / stat.st_size)
+                'Mapped': int(stat.st_size / divisor),
+                'Used': int(stat.st_blocks * 512 / divisor),
+                'Util (%)': int((stat.st_blocks * 512 * 100) / stat.st_size),
+                'Units': units
             })
         dbpp.reformat()
         for line in dbpp:
