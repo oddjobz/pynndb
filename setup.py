@@ -2,26 +2,21 @@ import os
 import codecs
 import re
 from setuptools import setup
+from pipenv.project import Project
+from pipenv.utils import convert_deps_to_pip
 
 here = os.path.abspath(os.path.dirname(__file__))
 with open(os.path.join(here, 'README.rst'), encoding='utf-8') as f:
     long_description = f.read()
 
-with open('requirements.txt') as io:
-    reqs = io.read().splitlines()
-with open('requirements-dev.txt') as io:
-    test_requirements = io.read().splitlines()
-
-requirements = []
-for r in reqs:
-    if '#' not in r:
-        requirements.append(r)
-
+pfile = Project(chdir=False).parsed_pipfile
+requirements = convert_deps_to_pip(pfile['packages'], r=False)
+test_requirements = convert_deps_to_pip(pfile['packages'], r=False)
+requirements.append('Pipfile')
 
 def read(*parts):
     with codecs.open(os.path.join(here, *parts), 'r') as fp:
         return fp.read()
-
 
 def find_version(*file_paths):
     version_file = read(*file_paths)
@@ -30,11 +25,10 @@ def find_version(*file_paths):
         return version_match.group(1)
     raise RuntimeError("Unable to find version string.")
 
-
 setup(
     name='pynndb',
     version=find_version("pynndb", "__init__.py"),
-    packages=['pynndb', 'pynndb_shell'],
+    packages=['pynndb'],
     url='https://github.com/oddjobz/pynndb',
     license='MIT',
     author='Gareth Bult',
@@ -51,10 +45,5 @@ setup(
     keywords=['pynndb', 'database', 'LMDB', 'python', 'ORM'],
     install_requires=requirements,
     tests_require=test_requirements,
-    data_files=[('', ['requirements.txt', 'requirements-dev.txt'])],
-    entry_points={
-        'console_scripts': [
-            'pynndb = pynndb_shell.__init__:main'
-        ]
-    }
+    data_files=[('', ['Pipfile'])]
 )

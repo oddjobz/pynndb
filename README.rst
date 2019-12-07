@@ -30,12 +30,6 @@ What stable features does it have?
 * ACID Transactions handling
 * Multi-thread and multi-process access to bypass GIL performance limitations
 
-What Features can I try?
-------------------------
-* Native command line shell [pynndb_ docs are here]
-
-.. _pynndb: docs/shell.md
-
 What Features are in development?
 ---------------------------------
 * High speed multi-node replication
