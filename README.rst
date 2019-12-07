@@ -4,7 +4,7 @@ PyNNDB - Python Native NoSQL Database
 .. image:: https://travis-ci.org/oddjobz/pynndb.svg?branch=master
     :target: https://travis-ci.org/oddjobz/pynndb
 
-.. image:: coverage.svg
+.. image:: https://github.com/oddjobz/pynndb/blob/master/coverage.svg
     :target: https://github.com/oddjobz/pynndb
 
 .. image:: https://badge.fury.io/py/pynndb.svg
