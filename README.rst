@@ -1,10 +1,12 @@
 PyNNDB - Python Native NoSQL Database
 =====================================
 
+* Note: pipenv is now a dependency.
+
 .. image:: https://travis-ci.org/oddjobz/pynndb.svg?branch=master
     :target: https://travis-ci.org/oddjobz/pynndb
 
-.. image:: https://github.com/oddjobz/pynndb/blob/master/coverage.svg
+.. image:: https://github.com/oddjobz/pynndb/blob/master/coverage.svg?branch=master
     :target: https://github.com/oddjobz/pynndb
 
 .. image:: https://badge.fury.io/py/pynndb.svg
