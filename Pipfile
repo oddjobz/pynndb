@@ -9,6 +9,7 @@ verify_ssl = true
 lmdb = "*"
 ujson = "*"
 bson = "*"
+pipenv = "*"
 
 [requires]
 python_version = "3.6"
