@@ -2,17 +2,30 @@ import os
 import codecs
 import re
 from setuptools import setup
-from pipenv.project import Project
-from pipenv.utils import convert_deps_to_pip
 
 here = os.path.abspath(os.path.dirname(__file__))
 with open(os.path.join(here, 'README.rst'), encoding='utf-8') as f:
     long_description = f.read()
 
-pfile = Project(chdir=False).parsed_pipfile
-requirements = convert_deps_to_pip(pfile['packages'], r=False)
-test_requirements = convert_deps_to_pip(pfile['packages'], r=False)
-requirements.append('Pipfile')
+try:
+    from pipenv.project import Project
+    from pipenv.utils import convert_deps_to_pip
+    pfile = Project(chdir=False).parsed_pipfile
+    requirements = convert_deps_to_pip(pfile['packages'], r=False)
+    requirements.append('Pipfile')
+except:
+    with open('requirements.txt') as io:
+        reqs = io.read().splitlines()
+
+    requirements = []
+    for r in reqs:
+        if r.startswith('-') or r.startswith('#'):
+            continue
+        if '#' in r:
+            requirements.append(r.split('=')[-1])
+        else:
+            requirements.append(r)
+
 
 def read(*parts):
     with codecs.open(os.path.join(here, *parts), 'r') as fp:
@@ -44,6 +57,5 @@ setup(
     ],
     keywords=['pynndb', 'database', 'LMDB', 'python', 'ORM'],
     install_requires=requirements,
-    tests_require=test_requirements,
-    data_files=[('', ['Pipfile'])]
+    data_files=[('', ['Pipfile', 'requirements.txt'])],
 )

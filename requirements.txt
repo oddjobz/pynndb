@@ -1,0 +1,10 @@
+-i https://pypi.org/simple
+bson==0.5.8
+certifi==2019.11.28
+lmdb==0.98
+pipenv==2018.11.26
+python-dateutil==2.8.1
+six==1.13.0
+ujson==1.35
+virtualenv-clone==0.5.3
+virtualenv==16.7.8
