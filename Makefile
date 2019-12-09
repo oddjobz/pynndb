@@ -4,3 +4,5 @@ all:
 requirements:
 	pipenv lock --requirements > requirements.txt
 
+docs:
+	cd docs && pydocmd build && pydocmd serve

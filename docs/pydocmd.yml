@@ -1,0 +1,31 @@
+site_name: PyNNDB
+# docs_dir: _build/pydocmd
+# site_dir: _build/site
+theme: readthedocs
+
+repo_url: https://github.com/oddjobz/pynndb
+pages:
+  - Home: index.md << index.md
+  - Getting Started: docs/gettingstarted.md
+  - The Storage Engine: docs/lmdb.md
+  - How indexing works: docs/indexing.md
+  - Some Examples: docs/examples.md
+  - API - Database Object: docs/database.md
+  - API - Table Object: docs/table.md
+  - API - Index Object: docs/index.md
+  - API - Transaction Object: docs/transaction.md
+extra_css: [extra.css]
+
+generate:
+- docs/database.md:
+  - pynndb.database:
+    - pynndb.database.Database+
+- docs/table.md:
+  - pynndb.table:
+    - pynndb.table.Table+
+- docs/index.md:
+  - pynndb.index:
+    - pynndb.index.Index+
+- docs/transaction.md:
+  - pynndb.transaction:
+    - pynndb.transaction.Transaction+

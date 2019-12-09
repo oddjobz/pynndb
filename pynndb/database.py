@@ -11,10 +11,17 @@ class Database(object):
     """
     Representation of a Database, this is the main API class
 
-    :param name: The name of the database to open
-    :type name: str
-    :param conf: Any additional or custom options for this environment
-    :type conf: dict
+    **Arguments**:
+
+    - `name` - The name of the database to open
+    - `conf` - Any additional or custom options for this environment
+    - `binlog` - Enable binary logging
+    - `size` - Set the maximum database size
+    - `master` - currently unused
+
+    **Raises**:
+
+    - `lmdb.NotFoundError` if the database folder is not found
     """
     _debug = False
     _conf = {
@@ -79,19 +86,17 @@ class Database(object):
 
     @property
     def env(self):
-        """
-        Return a reference to the current database environment
-
-        :return: A Database Environment
-        :rtype: Environment
-        """
         return self._env
 
     def set_binlog(self, enable=True):
         """
-        Enable or disable binary logging, disable with delete the transaction history too ...
+        Enable or disable binary logging, when enabled this option generates a transaction history
+        entry each time a database routine executes.
 
-        :param enable: Whether to enable or disable logging
+        **Arguments**:
+
+        - `enable` - If True, enable binary logging
+
         """
         if enable:
             if not self._binlog:
@@ -108,9 +113,15 @@ class Database(object):
 
     def begin(self, *args, **kwargs):
         """
-        Begin a new transaction returning a transaction reference (use with "with")
-        :return: Reference to the new transaction
-        :rtype: DBTransaction
+        Begin a new (write) transaction returning a transaction reference (use with "with")
+
+        **Arguments**:
+
+        Any arguments accepted by the Transaction Object, typically None.
+
+        **Returns**:
+
+        A new `Transaction` object
         """
         return Transaction(self, *args, write=True, **kwargs)
 
@@ -127,12 +138,15 @@ class Database(object):
 
     def exists(self, name):
         """
-        Test whether a table with a given name already exists
+        Check whether a table with a given name already exists
 
-        :param name: Table name
-        :type name: str
-        :return: True if table exists
-        :rtype: bool
+        **Arguments**:
+
+        - `name` - The name of the table to check for
+
+        **Returns**:
+
+        `True` if the table exists, otherwise `False`
         """
         return name in self.tables
 
@@ -171,10 +185,12 @@ class Database(object):
 
     def drop(self, name, txn=None):
         """
-        Drop a database table
+        Drop a database table and delete the contents
 
-        :param name: Name of table to drop
-        :type name: str
+        **Arguments**:
+
+        - `name` - The name of the table to drop
+        - `txn` - The transaction to work with or `None` if we're not inside a transaction
         """
         if name not in self._return_tables(True, txn):
             raise xTableMissing
@@ -193,8 +209,9 @@ class Database(object):
         Restructure a table, copy to a temporary table, then copy back. This will recreate the table
         and all it's ID's but will retain the original indexes. (which it will regenerate)
 
-        :param name: Name of the table to restructure
-        :type name: str
+        **Arguments**:
+
+        - `name` - Name of the table to restructure
         """
         with self.env.begin(write=True) as txn:
             if name not in self.tables: raise xTableMissing
@@ -214,10 +231,14 @@ class Database(object):
         """
         Return a reference to a table with a given name, creating first if it doesn't exist
 
-        :param name: Name of table
-        :type name: str
-        :return: Reference to table
-        :rtype: Table
+        **Arguments**:
+
+        - `name` - Name of the table to open
+        - `txn` - The transaction to work with or `None` if we're not inside a transaction
+
+        **Returns**:
+
+        A `Table` object
         """
         if name not in self._tables:
             self._tables[name] = Table(self, name, txn)
@@ -226,7 +247,10 @@ class Database(object):
     def size(self):
         """
         Return the current mapped size of the database
-        :return: size as a string
+
+        **Returns**:
+
+        The `size` of the database as a human-readable string
         """
         size = self._env.info()['map_size']
         size = size / (1024*1024)
