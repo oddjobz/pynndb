@@ -1,11 +1,12 @@
 PyNNDB - Python Native NoSQL Database
 =====================================
-
 .. image:: https://travis-ci.org/oddjobz/pynndb.svg?branch=master
     :target: https://travis-ci.org/oddjobz/pynndb
 
 .. image:: https://badge.fury.io/py/pynndb.svg
     :target: https://badge.fury.io/py/pynndb
+
+First attempt at some documentation can be found `here <https://pynndb.madpenguin.uk/v1/>`_
 
 PyNNDB is the second iteration of PyMamba, the name change reflects a conflict with another project
 of the same name, and a degree of incompatibility between the API in the old and new versions. At
