@@ -5,14 +5,14 @@ PyNNDB - Python Native NoSQL Database
 
 .. image:: https://badge.fury.io/py/pynndb.svg
     :target: https://badge.fury.io/py/pynndb
-
+```
      _                               _           _ 
   __| | ___ _ __  _ __ ___  ___ __ _| |_ ___  __| |
  / _` |/ _ \ '_ \| '__/ _ \/ __/ _` | __/ _ \/ _` |
 | (_| |  __/ |_) | | |  __/ (_| (_| | ||  __/ (_| |
  \__,_|\___| .__/|_|  \___|\___\__,_|\__\___|\__,_|
            |_|                                     
-
+```
 Unless you need V1, please take a look at V2 `here <https://gitlab.com/oddjobz/pynndb2>`_
 Documentation `here <https://pynndb.madpenguin.uk>`_
 
